@@ -3,16 +3,42 @@ import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-do
 import { Music, Search } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
+import { authApi, getAccessToken } from '@/lib/api'
 
 function AppHeader({ showActions = false }) {
   const location = useLocation()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const [query, setQuery] = useState(searchParams.get('q') || '')
+  const [isAdmin, setIsAdmin] = useState(false)
 
   useEffect(() => {
     setQuery(searchParams.get('q') || '')
   }, [location.search, searchParams])
+
+  useEffect(() => {
+    let mounted = true
+    const token = getAccessToken()
+    if (!token) return
+
+    ;(async () => {
+      try {
+        const me = await authApi.me()
+        if (!mounted) return
+
+        const roleStr = (me && me.role) || ''
+        const rolesArr = Array.isArray(me?.roles) ? me.roles : []
+        const admin = String(roleStr).toLowerCase().includes('admin') || rolesArr.some(r => String(r).toLowerCase().includes('admin'))
+        setIsAdmin(Boolean(admin))
+      } catch (err) {
+        // ignore
+      }
+    })()
+
+    return () => {
+      mounted = false
+    }
+  }, [])
 
   function handleSubmit(e) {
     e.preventDefault()
@@ -40,6 +66,11 @@ function AppHeader({ showActions = false }) {
             />
           </div>
         </form>
+        {isAdmin && (
+          <Link to="/admin" className="ml-4 text-sm font-semibold text-red-600 hover:underline">
+            Admin
+          </Link>
+        )}
 
         {showActions && (
           <div className="hidden shrink-0 items-center gap-3 md:flex">

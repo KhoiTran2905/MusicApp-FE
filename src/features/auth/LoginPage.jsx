@@ -35,7 +35,18 @@ function LoginPage() {
             localStorage.setItem("accessToken", data.accessToken);
             localStorage.setItem("refreshToken", data.refreshToken);
 
-            window.location.href = "/music"; // Redirect to music page after successful login
+            // Determine role and redirect accordingly
+            try {
+                const me = await authApi.me()
+                const roleStr = (me && me.role) || ''
+                const rolesArr = Array.isArray(me?.roles) ? me.roles : []
+                const isAdmin = String(roleStr).toLowerCase().includes('admin') || rolesArr.some(r => String(r).toLowerCase().includes('admin'))
+
+                window.location.href = isAdmin ? '/admin' : '/music'
+            } catch (err) {
+                // If fetching profile fails, fallback to regular dashboard
+                window.location.href = '/music'
+            }
 
         } catch (err) {
             setError(err.message || "Đăng nhập thất bại. Vui lòng thử lại.");
@@ -76,7 +87,17 @@ function LoginPage() {
             const data = await authApi.verifyLoginOtp({ email: email, otp: otpCode });
             localStorage.setItem('accessToken', data.accessToken);
             localStorage.setItem('refreshToken', data.refreshToken);
-            window.location.href = '/music';
+
+            try {
+                const me = await authApi.me()
+                const roleStr = (me && me.role) || ''
+                const rolesArr = Array.isArray(me?.roles) ? me.roles : []
+                const isAdmin = String(roleStr).toLowerCase().includes('admin') || rolesArr.some(r => String(r).toLowerCase().includes('admin'))
+
+                window.location.href = isAdmin ? '/admin' : '/music'
+            } catch (err) {
+                window.location.href = '/music'
+            }
         } catch (err) {
             setError(err.message || 'Xác thực OTP thất bại. Vui lòng thử lại.');
         } finally {

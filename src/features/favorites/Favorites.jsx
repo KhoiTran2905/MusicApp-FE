@@ -3,6 +3,7 @@ import { Heart, Play, Trash2 } from 'lucide-react'
 
 import { favoritesApi, apiUtils } from '@/lib/api'
 import { useMusic } from '@/contexts/MusicContext'
+import { resolveSongArtistName, resolveSongEntity, resolveSongId, resolveSongTitle } from '@/lib/song-utils'
 
 export default function Favorites() {
   const { setCurrentSong } = useMusic()
@@ -50,10 +51,6 @@ export default function Favorites() {
     }
   }
 
-  function resolveSong(favorite) {
-    return favorite.song || favorite.music || favorite.track || favorite
-  }
-
   return (
     <div>
       <div className="mb-8">
@@ -67,13 +64,14 @@ export default function Favorites() {
       {!loading && !error && (
         <div className="space-y-3 rounded-xl border bg-white p-5 shadow-sm">
           {favorites.map((favorite) => {
-            const song = resolveSong(favorite)
-            const title = song.title || song.name || song.songName || 'Untitled song'
-            const artistName = typeof song.artist === 'string' ? song.artist : song.artist?.name || 'Unknown artist'
+            const song = resolveSongEntity(favorite)
+            const title = resolveSongTitle(song)
+            const artistName = resolveSongArtistName(song)
+            const songId = resolveSongId(favorite)
 
             return (
               <div
-                key={favorite.id || song.id || title}
+                key={favorite.id || songId || title}
                 className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2"
               >
                 <button type="button" onClick={() => setCurrentSong(song)} className="flex min-w-0 flex-1 items-center gap-3 text-left">
@@ -94,7 +92,7 @@ export default function Favorites() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => handleUnlike(song.id || favorite.songId)}
+                    onClick={() => handleUnlike(songId)}
                     className="inline-flex items-center gap-1 rounded-lg border border-red-200 px-3 py-2 text-sm text-red-700 hover:bg-red-50"
                   >
                     <Trash2 className="w-4 h-4" />

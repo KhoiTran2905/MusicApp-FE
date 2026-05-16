@@ -13,9 +13,7 @@ function buildUrl(path) {
 		return path
 	}
 
-	const normalizedBase = API_BASE_URL.endsWith('/')
-		? API_BASE_URL.slice(0, -1)
-		: API_BASE_URL
+	const normalizedBase = API_BASE_URL.endsWith('/') ? API_BASE_URL.slice(0, -1) : API_BASE_URL
 	const normalizedPath = path.startsWith('/') ? path : `/${path}`
 
 	return `${normalizedBase}${normalizedPath}`
@@ -80,6 +78,7 @@ function buildRequestInit(options = {}) {
 	}
 
 	let requestBody = body
+	const isFormData = body instanceof FormData
 	const isBodyObject =
 		body && typeof body === 'object' && !(body instanceof FormData) && !(body instanceof Blob)
 
@@ -91,6 +90,12 @@ function buildRequestInit(options = {}) {
 			requestHeaders.set('Accept', 'application/json')
 		}
 		requestBody = JSON.stringify(body)
+	} else if (isFormData) {
+		// Don't set Content-Type for FormData - let browser handle it with boundary
+		// But set Accept for the response
+		if (!requestHeaders.has('Accept')) {
+			requestHeaders.set('Accept', 'application/json')
+		}
 	}
 
 	return {
@@ -220,13 +225,7 @@ function extractList(data) {
 		return data
 	}
 
-	return (
-		data?.data?.content ||
-		data?.content ||
-		data?.items ||
-		data?.results ||
-		[]
-	)
+	return data?.data?.content || data?.content || data?.items || data?.results || []
 }
 
 export const apiUtils = {
@@ -254,21 +253,27 @@ export const authApi = {
 }
 
 export const songsApi = {
-	getSongs: (params = {}) => fetchWithAuthJson(`/api/songs${toQueryString(params)}`),
+	getSongs: (params = {}) =>
+		fetchWithAuthJson(`/api/songs${toQueryString({ page: params.page, size: params.size, sort: params.sort })}`),
 	getSongById: (id) => fetchWithAuthJson(`/api/songs/${id}`),
-	getTrendingSongs: () => fetchWithAuthJson('/api/songs/trending'),
-	searchSongs: (query) => fetchWithAuthJson(`/api/songs/search${toQueryString({ q: query })}`),
+	getTrendingSongs: (params = {}) =>
+		fetchWithAuthJson(`/api/songs/trending${toQueryString({ page: params.page, size: params.size })}`),
+	searchSongs: (query, params = {}) =>
+		fetchWithAuthJson(
+			`/api/songs/search${toQueryString({ q: query, type: params.type, page: params.page, size: params.size })}`,
+		),
 	createSong: (payload) => apiJson('/api/songs', { method: 'POST', body: payload, auth: true }),
 	updateSong: (id, payload) =>
 		apiJson(`/api/songs/${id}`, { method: 'PUT', body: payload, auth: true }),
 	deleteSong: (id) => apiJson(`/api/songs/${id}`, { method: 'DELETE', auth: true }),
-	uploadSong: (formData) =>
-		apiJson('/api/songs', { method: 'POST', auth: true, body: formData }),
+	uploadSong: (formData) => apiJson('/api/songs', { method: 'POST', auth: true, body: formData }),
 }
 
 export const playlistsApi = {
-	getPlaylists: () => fetchWithAuthJson('/api/playlists'),
-	getPublicPlaylists: () => fetchWithAuthJson('/api/playlists/public'),
+	getPlaylists: (params = {}) =>
+		fetchWithAuthJson(`/api/playlists${toQueryString({ page: params.page, size: params.size })}`),
+	getPublicPlaylists: (params = {}) =>
+		fetchWithAuthJson(`/api/playlists/public${toQueryString({ page: params.page, size: params.size })}`),
 	getPlaylistById: (id) => fetchWithAuthJson(`/api/playlists/${id}`),
 	createPlaylist: (payload) =>
 		apiJson('/api/playlists', { method: 'POST', body: payload, auth: true }),
@@ -282,7 +287,8 @@ export const playlistsApi = {
 }
 
 export const albumsApi = {
-	getAlbums: (params = {}) => fetchWithAuthJson(`/api/albums${toQueryString(params)}`),
+	getAlbums: (params = {}) =>
+		fetchWithAuthJson(`/api/albums${toQueryString({ page: params.page, size: params.size })}`),
 	getAlbumById: (id) => fetchWithAuthJson(`/api/albums/${id}`),
 	createAlbum: (payload) => apiJson('/api/albums', { method: 'POST', body: payload, auth: true }),
 	updateAlbum: (id, payload) =>
@@ -291,9 +297,11 @@ export const albumsApi = {
 }
 
 export const artistsApi = {
-	getArtists: () => fetchWithAuthJson('/api/artists'),
+	getArtists: (params = {}) =>
+		fetchWithAuthJson(`/api/artists${toQueryString({ page: params.page, size: params.size })}`),
 	getArtistById: (id) => fetchWithAuthJson(`/api/artists/${id}`),
-	getArtistSongs: (id) => fetchWithAuthJson(`/api/artists/${id}/songs`),
+	getArtistSongs: (id, params = {}) =>
+		fetchWithAuthJson(`/api/artists/${id}/songs${toQueryString({ page: params.page, size: params.size })}`),
 	getArtistAlbums: (id) => fetchWithAuthJson(`/api/artists/${id}/albums`),
 	getArtistFollowers: (id) => fetchWithAuthJson(`/api/artists/${id}/followers`),
 	createArtist: (payload) => apiJson('/api/artists', { method: 'POST', body: payload, auth: true }),
@@ -310,108 +318,41 @@ export const followApi = {
 }
 
 export const favoritesApi = {
-	getFavorites: (params = {}) => fetchWithAuthJson(`/api/favorites${toQueryString(params)}`),
+	getFavorites: (params = {}) =>
+		fetchWithAuthJson(`/api/favorites${toQueryString({ page: params.page, size: params.size })}`),
 	likeSong: (songId) => apiJson(`/api/favorites/${songId}`, { method: 'POST', auth: true }),
 	unlikeSong: (songId) => apiJson(`/api/favorites/${songId}`, { method: 'DELETE', auth: true }),
 }
 
 export const historyApi = {
-	getHistory: () => fetchWithAuthJson('/api/history'),
+	getHistory: (params = {}) =>
+		fetchWithAuthJson(`/api/history${toQueryString({ page: params.page, size: params.size })}`),
 	addHistory: (payload) => apiJson('/api/history', { method: 'POST', body: payload, auth: true }),
 	deleteHistoryById: (id) => apiJson(`/api/history/${id}`, { method: 'DELETE', auth: true }),
 	deleteAllHistory: () => apiJson('/api/history', { method: 'DELETE', auth: true }),
 }
 
 export const searchApi = {
-	search: (query) => fetchWithAuthJson(`/api/search${toQueryString({ q: query })}`),
+	search: (query, params = {}) =>
+		fetchWithAuthJson(`/api/search${toQueryString({ q: query, page: params.page, size: params.size })}`),
 }
 
 export const adminApi = {
 	getStatus: () => fetchWithAuthJson('/api/admin/stats'),
-	getUsers: (params = {}) => fetchWithAuthJson(`/api/admin/users${toQueryString(params)}`),
+	getUsers: (params = {}) =>
+		fetchWithAuthJson(`/api/admin/users${toQueryString({ page: params.page, size: params.size })}`),
 	getUserById: (id) => fetchWithAuthJson(`/api/admin/users/${id}`),
-	banUser: (id) => apiJson(`/api/admin/users/${id}/ban`, { method: 'PUT', auth: true }),
+	banUser: (id, payload) => apiJson(`/api/admin/users/${id}/ban`, { method: 'PUT', body: payload, auth: true }),
 	unbanUser: (id) => apiJson(`/api/admin/users/${id}/unban`, { method: 'PUT', auth: true }),
 	deleteAdminSong: (id) => apiJson(`/api/admin/songs/${id}`, { method: 'DELETE', auth: true }),
 }
 
-export const userApi = {
-	getUserProfile: (userId) => fetchWithAuthJson(`/api/users/${userId}`),
-	updateProfile: (payload) => apiJson('/api/users/profile', { method: 'PUT', body: payload, auth: true }),
-	uploadAvatar: (formData) => apiJson('/api/users/avatar', { method: 'POST', auth: true, body: formData }),
-	getUserStats: () => fetchWithAuthJson('/api/users/stats'),
-	getTopSongs: () => fetchWithAuthJson('/api/users/top-songs'),
-	getTopArtists: () => fetchWithAuthJson('/api/users/top-artists'),
-}
-
-export const categoriesApi = {
-	getCategories: () => fetchWithAuthJson('/api/categories'),
-	getCategoryById: (id) => fetchWithAuthJson(`/api/categories/${id}`),
-	getSongsByCategory: (categoryId, params = {}) =>
-		fetchWithAuthJson(`/api/categories/${categoryId}/songs${toQueryString(params)}`),
-}
-
-export const recommendationsApi = {
-	getRecommendedSongs: (params = {}) =>
-		fetchWithAuthJson(`/api/recommendations/songs${toQueryString(params)}`),
-	getRecommendedPlaylists: (params = {}) =>
-		fetchWithAuthJson(`/api/recommendations/playlists${toQueryString(params)}`),
-	getRecommendedArtists: (params = {}) =>
-		fetchWithAuthJson(`/api/recommendations/artists${toQueryString(params)}`),
-}
-
-export const commentsApi = {
-	getSongComments: (songId, params = {}) =>
-		fetchWithAuthJson(`/api/songs/${songId}/comments${toQueryString(params)}`),
-	addComment: (songId, payload) =>
-		apiJson(`/api/songs/${songId}/comments`, { method: 'POST', body: payload, auth: true }),
-	updateComment: (songId, commentId, payload) =>
-		apiJson(`/api/songs/${songId}/comments/${commentId}`, { method: 'PUT', body: payload, auth: true }),
-	deleteComment: (songId, commentId) =>
-		apiJson(`/api/songs/${songId}/comments/${commentId}`, { method: 'DELETE', auth: true }),
-	likeComment: (songId, commentId) =>
-		apiJson(`/api/songs/${songId}/comments/${commentId}/like`, { method: 'POST', auth: true }),
-	unlikeComment: (songId, commentId) =>
-		apiJson(`/api/songs/${songId}/comments/${commentId}/unlike`, { method: 'DELETE', auth: true }),
-}
-
-export const sharingApi = {
-	sharePlaylist: (playlistId) =>
-		apiJson(`/api/playlists/${playlistId}/share`, { method: 'POST', auth: true }),
-	shareSong: (songId) => apiJson(`/api/songs/${songId}/share`, { method: 'POST', auth: true }),
-	shareArtist: (artistId) =>
-		apiJson(`/api/artists/${artistId}/share`, { method: 'POST', auth: true }),
-	getSharedContent: (shareCode) => fetchWithAuthJson(`/api/shared/${shareCode}`),
-}
-
-export const notificationsApi = {
-	getNotifications: (params = {}) =>
-		fetchWithAuthJson(`/api/notifications${toQueryString(params)}`),
-	markAsRead: (notificationId) =>
-		apiJson(`/api/notifications/${notificationId}/read`, { method: 'PUT', auth: true }),
-	markAllAsRead: () => apiJson('/api/notifications/read-all', { method: 'PUT', auth: true }),
-	deleteNotification: (notificationId) =>
-		apiJson(`/api/notifications/${notificationId}`, { method: 'DELETE', auth: true }),
-	deleteAllNotifications: () => apiJson('/api/notifications', { method: 'DELETE', auth: true }),
-}
-
-export const ratingsApi = {
-	getSongRating: (songId) => fetchWithAuthJson(`/api/songs/${songId}/rating`),
-	rateSong: (songId, rating) =>
-		apiJson(`/api/songs/${songId}/rating`, { method: 'POST', body: { rating }, auth: true }),
-	updateRating: (songId, rating) =>
-		apiJson(`/api/songs/${songId}/rating`, { method: 'PUT', body: { rating }, auth: true }),
-	deleteRating: (songId) => apiJson(`/api/songs/${songId}/rating`, { method: 'DELETE', auth: true }),
-}
-
-export const playlistDetailsApi = {
-	getPlaylistSongs: (playlistId, params = {}) =>
-		fetchWithAuthJson(`/api/playlists/${playlistId}/songs${toQueryString(params)}`),
-	changePlaylistCover: (playlistId, formData) =>
-		apiJson(`/api/playlists/${playlistId}/cover`, { method: 'POST', auth: true, body: formData }),
-}
-
-export const albumDetailsApi = {
-	getAlbumSongs: (albumId, params = {}) =>
-		fetchWithAuthJson(`/api/albums/${albumId}/songs${toQueryString(params)}`),
+export const uploadsApi = {
+	getMyUploads: (params = {}) =>
+		fetchWithAuthJson(`/api/uploads/me${toQueryString({ page: params.page, size: params.size })}`),
+	getUploads: (params = {}) =>
+		fetchWithAuthJson(`/api/uploads${toQueryString({ status: params.status, page: params.page, size: params.size })}`),
+	approveUpload: (id) => apiJson(`/api/uploads/${id}/approve`, { method: 'PUT', auth: true }),
+	rejectUpload: (id, payload) =>
+		apiJson(`/api/uploads/${id}/reject`, { method: 'PUT', body: payload, auth: true }),
 }

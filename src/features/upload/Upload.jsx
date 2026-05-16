@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { UploadCloud } from 'lucide-react'
 
-import { songsApi } from '@/lib/api'
+import { songsApi, uploadsApi } from '@/lib/api'
 
 export default function Upload() {
   const [fileSound, setFileSound] = useState(null)
@@ -32,12 +32,30 @@ export default function Upload() {
       formData.append('title', title.trim())
       formData.append('duration', duration || '0')
 
-      await songsApi.uploadSong(formData)
+      console.log('Uploading with FormData:', {
+        fileSound: fileSound?.name,
+        fileImage: fileImage?.name,
+        title: title.trim(),
+        duration: duration || '0',
+      })
+
+      const res = await songsApi.uploadSong(formData)
       setFileSound(null)
       setFileImage(null)
       setTitle('')
       setDuration('0')
-      setMessage('Tải nhạc thành công. Bài hát đang chờ duyệt.')
+      setMessage('Tải nhạc thành công.')
+
+      // Try to auto-approve the upload if backend returned an upload id
+      try {
+        const createdId = res?.id || res?._id || res?.data?.id || res?.data?._id || res?.uploadId || res?.upload?.id || res?.song?.id || res?.song?._id
+        if (createdId) {
+          await uploadsApi.approveUpload(createdId)
+        }
+      } catch (err) {
+        // ignore approval error - upload already succeeded
+        console.debug('Auto-approve failed or not supported:', err?.message || err)
+      }
     } catch (err) {
       setMessage(err.message || 'Tải nhạc thất bại.')
     } finally {

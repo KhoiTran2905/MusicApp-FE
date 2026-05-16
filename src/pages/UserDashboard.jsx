@@ -9,6 +9,7 @@ import {
 	Music2,
 	Play,
 	Search,
+	Trash2,
 	Upload,
 } from 'lucide-react'
 
@@ -16,6 +17,7 @@ import { Link } from 'react-router-dom'
 
 import { useMusic } from '@/contexts/MusicContext'
 import { apiUtils, authApi, favoritesApi, historyApi, playlistsApi, songsApi } from '@/lib/api'
+import { resolveSongArtistName, resolveSongEntity, resolveSongId, resolveSongTitle } from '@/lib/song-utils'
 
 function UserDashboard() {
 	const { setCurrentSong } = useMusic()
@@ -26,6 +28,7 @@ function UserDashboard() {
 	const [playlists, setPlaylists] = useState([])
 	const [favorites, setFavorites] = useState([])
 	const [history, setHistory] = useState([])
+	const [unlikingSongId, setUnlikingSongId] = useState('')
 
 	useEffect(() => {
 		let isMounted = true
@@ -124,7 +127,13 @@ function UserDashboard() {
 	)
 
 	const featuredSongs = songs.slice(0, 6)
-	const recentSongs = history.map((item) => item.song || item.music || item.track || item).slice(0, 5)
+	const recentSongs = history.slice(0, 5).map((item, index) => {
+		const song = resolveSongEntity(item)
+		return {
+			key: item.id || item._id || `${resolveSongId(song) || resolveSongTitle(song)}-${index}`,
+			song,
+		}
+	})
 	const quickActions = [
 		{
 			label: 'Tìm kiếm bài hát',
@@ -146,14 +155,24 @@ function UserDashboard() {
 		},
 	]
 
-	function resolveTitle(song) {
-		return song?.title || song?.name || song?.songName || 'Untitled song'
-	}
+	async function handleUnlikeFromDashboard(song) {
+		const songId = resolveSongId(song)
+		if (!songId || unlikingSongId) return
 
-	function resolveArtistName(song) {
-		if (!song) return 'Unknown artist'
-		if (typeof song.artist === 'string') return song.artist
-		return song.artist?.name || 'Unknown artist'
+		setUnlikingSongId(songId)
+		setError('')
+
+		try {
+			await favoritesApi.unlikeSong(songId)
+			setFavorites((prev) => prev.filter((favorite) => {
+				const favoriteSongId = resolveSongId(favorite)
+				return favoriteSongId !== songId
+			}))
+		} catch (err) {
+			setError(err.message || 'Không thể bỏ yêu thích bài hát này.')
+		} finally {
+			setUnlikingSongId('')
+		}
 	}
 
 	return (
@@ -220,7 +239,7 @@ function UserDashboard() {
 							{featuredSongs.map((song) => (
 								<button
 									type="button"
-									key={song.id || song._id || resolveTitle(song)}
+									key={resolveSongId(song) || resolveSongTitle(song)}
 									onClick={() => setCurrentSong(song)}
 									className="flex w-full items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3 text-left transition hover:border-red-200 hover:bg-red-50"
 								>
@@ -228,8 +247,8 @@ function UserDashboard() {
 										<Music2 className="h-4 w-4" />
 									</div>
 									<div className="min-w-0 flex-1">
-										<p className="truncate font-medium text-slate-900">{resolveTitle(song)}</p>
-										<p className="truncate text-sm text-slate-500">{resolveArtistName(song)}</p>
+										<p className="truncate font-medium text-slate-900">{resolveSongTitle(song)}</p>
+										<p className="truncate text-sm text-slate-500">{resolveSongArtistName(song)}</p>
 									</div>
 									<ArrowRight className="h-4 w-4 shrink-0 text-slate-400" />
 								</button>
@@ -286,21 +305,38 @@ function UserDashboard() {
 
 					<div className="space-y-2">
 						{favorites.slice(0, 5).map((favorite) => {
-							const song = favorite.song || favorite.music || favorite.track || favorite
+							const song = resolveSongEntity(favorite)
+							const songId = resolveSongId(favorite)
+							const isUnliking = unlikingSongId === songId
+
 							return (
-								<button
-									type="button"
-									key={favorite.id || song.id || resolveTitle(song)}
-									onClick={() => setCurrentSong(song)}
-									className="flex w-full items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3 text-left transition hover:bg-red-50"
+								<div
+									key={favorite.id || resolveSongId(song) || resolveSongTitle(song)}
+									className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3 transition hover:bg-red-50"
 								>
-									<Heart className="h-4 w-4 shrink-0 text-red-700" />
-									<div className="min-w-0 flex-1">
-										<p className="truncate font-medium text-slate-900">{resolveTitle(song)}</p>
-										<p className="truncate text-sm text-slate-500">{resolveArtistName(song)}</p>
-									</div>
-									<Play className="h-4 w-4 text-slate-400" />
-								</button>
+									<button
+										type="button"
+										onClick={() => setCurrentSong(song)}
+										className="flex min-w-0 flex-1 items-center gap-3 text-left"
+									>
+										<Heart className="h-4 w-4 shrink-0 text-red-700" />
+										<div className="min-w-0 flex-1">
+											<p className="truncate font-medium text-slate-900">{resolveSongTitle(song)}</p>
+											<p className="truncate text-sm text-slate-500">{resolveSongArtistName(song)}</p>
+										</div>
+										<Play className="h-4 w-4 text-slate-400" />
+									</button>
+
+									<button
+										type="button"
+										onClick={() => handleUnlikeFromDashboard(song)}
+										disabled={isUnliking}
+										className="inline-flex shrink-0 items-center gap-1 rounded-lg border border-red-200 px-3 py-2 text-xs font-medium text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
+									>
+										<Trash2 className="h-3.5 w-3.5" />
+										{isUnliking ? 'Đang bỏ...' : ''}
+									</button>
+								</div>
 							)
 						})}
 
@@ -322,17 +358,17 @@ function UserDashboard() {
 					</div>
 
 					<div className="space-y-2">
-						{recentSongs.map((song) => (
+						{recentSongs.map((item) => (
 							<button
 								type="button"
-								key={song.id || song._id || resolveTitle(song)}
-								onClick={() => setCurrentSong(song)}
+								key={item.key}
+								onClick={() => setCurrentSong(item.song)}
 								className="flex w-full items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3 text-left transition hover:bg-red-50"
 							>
 								<Clock3 className="h-4 w-4 shrink-0 text-red-700" />
 								<div className="min-w-0 flex-1">
-									<p className="truncate font-medium text-slate-900">{resolveTitle(song)}</p>
-									<p className="truncate text-sm text-slate-500">{resolveArtistName(song)}</p>
+									<p className="truncate font-medium text-slate-900">{resolveSongTitle(item.song)}</p>
+									<p className="truncate text-sm text-slate-500">{resolveSongArtistName(item.song)}</p>
 								</div>
 								<Play className="h-4 w-4 text-slate-400" />
 							</button>
