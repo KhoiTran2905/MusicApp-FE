@@ -24,6 +24,7 @@ import Profile from '@/features/profile/Profile'
 import AdminArtists from '@/pages/admin/AdminArtists'
 import AdminAlbums from '@/pages/admin/AdminAlbums'
 import AdminSongs from '@/pages/admin/AdminSongs'
+import AdminAdmins from '@/pages/admin/AdminAdmins'
 
 export default function AppRoutes() {
   return (
@@ -56,6 +57,7 @@ export default function AppRoutes() {
             <Route path="albums"  element={<AdminAlbums />} />
             <Route path="songs"   element={<AdminSongs />} />
             <Route path="accounts" element={<AdminAccounts />} />
+            <Route path="admins" element={<AdminAdmins />} />
           </Route>
         </Route>
       </Route>

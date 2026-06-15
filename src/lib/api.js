@@ -249,6 +249,8 @@ export const authApi = {
 		}),
 	updatePassword: (payload) =>
 		apiJson('/api/auth/update-password', { method: 'PUT', body: payload, auth: true }),
+	updateProfile: (payload) =>
+		apiJson('/api/auth/profile', { method: 'PUT', body: payload, auth: true }),
 	me: () => fetchWithAuthJson('/api/auth/me'),
 }
 
@@ -341,11 +343,23 @@ export const searchApi = {
 export const adminApi = {
 	getStatus: () => fetchWithAuthJson('/api/admin/stats'),
 	getUsers: (params = {}) =>
-		fetchWithAuthJson(`/api/admin/users${toQueryString({ page: params.page, size: params.size })}`),
+		fetchWithAuthJson(
+			`/api/admin/users${toQueryString({ page: params.page, size: params.size, sort: params.sort, q: params.q })}`,
+		),
 	getUserById: (id) => fetchWithAuthJson(`/api/admin/users/${id}`),
+	updateUser: (id, payload) =>
+		apiJson(`/api/admin/users/${id}`, { method: 'PUT', body: payload, auth: true }),
 	banUser: (id, payload) => apiJson(`/api/admin/users/${id}/ban`, { method: 'PUT', body: payload, auth: true }),
 	unbanUser: (id) => apiJson(`/api/admin/users/${id}/unban`, { method: 'PUT', auth: true }),
 	deleteAdminSong: (id) => apiJson(`/api/admin/songs/${id}`, { method: 'DELETE', auth: true }),
+	getAdmins: (params = {}) =>
+		fetchWithAuthJson(
+			`/api/admin/admins${toQueryString({ page: params.page, size: params.size, sort: params.sort, q: params.q })}`,
+		),
+	createAdmin: (payload) => apiJson('/api/admin/admins', { method: 'POST', body: payload, auth: true }),
+	deleteAdmin: (id) => apiJson(`/api/admin/admins/${id}`, { method: 'DELETE', auth: true }),
+	updateAdminPassword: (id, payload) =>
+		apiJson(`/api/admin/admins/${id}/password`, { method: 'PUT', body: payload, auth: true }),
 }
 
 export const uploadsApi = {

@@ -1,5 +1,5 @@
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom'
-import { Layers3, ShieldBan, LogOut } from 'lucide-react'
+import { Layers3, LogOut, ShieldBan, UserCog } from 'lucide-react'
 
 import { authApi, clearAuthTokens } from '@/lib/api'
 
@@ -33,14 +33,14 @@ export default function AdminLayout() {
           </div>
           <div className="flex items-center gap-4">
             <Link to="/music" className="text-sm font-medium text-slate-600 hover:text-red-600">
-              Về trang User
+              Ve trang User
             </Link>
             <button
               onClick={handleLogout}
               className="inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm text-slate-700 hover:bg-slate-50"
             >
               <LogOut className="h-4 w-4" />
-              Đăng xuất
+              Dang xuat
             </button>
           </div>
         </div>
@@ -52,19 +52,23 @@ export default function AdminLayout() {
           <nav className="flex flex-col gap-2">
             <NavLink to="/admin/artists" className={navClass}>
               <Layers3 className="h-4 w-4" />
-              Quản lí Artist
+              Quan ly Artist
             </NavLink>
             <NavLink to="/admin/albums" className={navClass}>
               <Layers3 className="h-4 w-4" />
-              Quản lí Album
+              Quan ly Album
             </NavLink>
             <NavLink to="/admin/songs" className={navClass}>
               <Layers3 className="h-4 w-4" />
-              Quản lí Song
+              Quan ly Song
             </NavLink>
             <NavLink to="/admin/accounts" className={navClass}>
               <ShieldBan className="h-4 w-4" />
-              Quản lý tài khoản
+              Quan ly tai khoan
+            </NavLink>
+            <NavLink to="/admin/admins" className={navClass}>
+              <UserCog className="h-4 w-4" />
+              Quan ly admin
             </NavLink>
           </nav>
         </aside>
