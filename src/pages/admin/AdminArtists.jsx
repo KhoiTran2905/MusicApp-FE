@@ -1,16 +1,8 @@
-<<<<<<< HEAD
-// src/pages/admin/AdminArtists.jsx
-import { useState } from 'react'
-import { Plus, Trash2 } from 'lucide-react'
-import { artistsApi } from '@/lib/api'
-import { useCatalogData } from '@/hooks/useCatalogData'
-=======
-/* eslint-disable react-hooks/exhaustive-deps, react-hooks/set-state-in-effect */
-import { useEffect, useMemo, useState } from 'react'
-import { Edit, Plus, Search } from 'lucide-react'
-import { toast } from 'sonner'
->>>>>>> 19e30187956d2428675436e6185d68134e0b1878
 
+import { useCatalogData } from '@/hooks/useCatalogData'
+import { useEffect, useMemo, useState } from 'react'
+import { Edit, Plus, Search, Trash2} from 'lucide-react'
+import { toast } from 'sonner'
 import { apiUtils, artistsApi } from '@/lib/api'
 
 const PAGE_SIZE = 10
@@ -35,15 +27,11 @@ export default function AdminArtists() {
   const [error, setError] = useState('')
   const [form, setForm] = useState(emptyForm)
   const [showForm, setShowForm] = useState(false)
-<<<<<<< HEAD
-  const [saving, setSaving]     = useState(false)
-  const [deletingId, setDeletingId] = useState('')
-  const [query, setQuery]       = useState('')
-=======
+
   const [saving, setSaving] = useState(false)
   const [editingArtist, setEditingArtist] = useState(null)
   const [editForm, setEditForm] = useState(emptyForm)
->>>>>>> 19e30187956d2428675436e6185d68134e0b1878
+
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
@@ -184,28 +172,7 @@ export default function AdminArtists() {
         <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Tim nghe si..." className="w-full rounded-lg border px-9 py-2 text-sm" />
       </div>
 
-<<<<<<< HEAD
-      {loading ? <p className="text-sm text-slate-500">Đang tải...</p> : (
-        <div className="space-y-2">
-          {visible.map(artist => (
-       
-              <div key={getId(artist)} className="flex items-center justify-between rounded-xl border bg-white px-4 py-3 text-sm font-medium text-slate-800">
-                {artist?.name || 'Không tên'}
-                <button
-                  onClick={() => handleDelete(artist)}
-                  disabled={deletingId === getId(artist)}
-                  className="inline-flex items-center gap-1 rounded-lg border border-red-300 px-3 py-1 text-xs text-red-600 hover:bg-red-50 disabled:opacity-60"
-                  >
-                <Trash2 className="h-3 w-3" />
 
-                      {deletingId === getId(artist)
-                        ? 'Đang xóa...'
-                        : 'Xóa'}
-              </button>
-              </div>
-          ))}
-          
-=======
       <section className="rounded-xl border bg-white p-4 shadow-sm">
         {loading ? <p className="text-sm text-slate-500">Dang tai...</p> : (
           <div className="space-y-2">
@@ -251,7 +218,6 @@ export default function AdminArtists() {
               <button type="submit" disabled={saving} className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-70">{saving ? 'Dang luu...' : 'Luu'}</button>
             </div>
           </form>
->>>>>>> 19e30187956d2428675436e6185d68134e0b1878
         </div>
       )}
     </div>

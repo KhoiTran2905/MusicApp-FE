@@ -1,17 +1,10 @@
-<<<<<<< HEAD
-// src/pages/admin/AdminAlbums.jsx
-import { useState } from 'react'
-import { Plus, Trash2} from 'lucide-react'
-import { albumsApi, songsApi } from '@/lib/api'
-import { useCatalogData } from '@/hooks/useCatalogData'
-=======
-/* eslint-disable react-hooks/exhaustive-deps, react-hooks/set-state-in-effect */
-import { useEffect, useMemo, useState } from 'react'
-import { Edit, Plus, Search, Trash2 } from 'lucide-react'
-import { toast } from 'sonner'
->>>>>>> 19e30187956d2428675436e6185d68134e0b1878
 
-import { albumsApi, apiUtils, artistsApi } from '@/lib/api'
+// src/pages/admin/AdminAlbums.jsx
+import { useState, useEffect, useMemo } from 'react'
+import { Plus, Trash2, Search, Edit} from 'lucide-react'
+import { useCatalogData } from '@/hooks/useCatalogData'
+import { albumsApi, apiUtils, artistsApi} from '@/lib/api'
+import { toast } from 'sonner'
 
 const PAGE_SIZE = 10
 
