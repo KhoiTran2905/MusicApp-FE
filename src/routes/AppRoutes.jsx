@@ -1,4 +1,4 @@
-import { Route, Routes } from 'react-router-dom'
+import { Navigate, Route, Routes } from 'react-router-dom'
 
 import AdminRoute from '@/components/AdminRoute'
 import ProtectedRoute from '@/components/ProtectedRoute'
@@ -52,7 +52,7 @@ export default function AppRoutes() {
 
         <Route element={<AdminRoute />}>
           <Route path="/admin" element={<AdminLayout />}>
-            <Route index element={<AdminAccounts />} />
+            <Route index element={<Navigate to="accounts" replace />} />
             <Route path="artists" element={<AdminArtists />} />
             <Route path="albums"  element={<AdminAlbums />} />
             <Route path="songs"   element={<AdminSongs />} />

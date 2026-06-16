@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { ArrowDownUp, Edit, Search } from 'lucide-react'
 import { toast } from 'sonner'
 
-import { adminApi, apiUtils } from '@/lib/api'
+import { adminApi, apiUtils, authApi } from '@/lib/api'
 
 const PAGE_SIZE = 10
 
@@ -11,10 +11,44 @@ function getId(item) {
   return item?.id || item?._id
 }
 
+function normalizeValue(value) {
+  return String(value ?? '').trim().toLowerCase()
+}
+
+function isSameUser(left, right) {
+  const leftId = normalizeValue(getId(left))
+  const rightId = normalizeValue(getId(right))
+  if (leftId && rightId && leftId === rightId) return true
+
+  const leftEmail = normalizeValue(left?.email)
+  const rightEmail = normalizeValue(right?.email)
+  if (leftEmail && rightEmail && leftEmail === rightEmail) return true
+
+  const leftUsername = normalizeValue(left?.username || left?.name)
+  const rightUsername = normalizeValue(right?.username || right?.name)
+  return Boolean(leftUsername && rightUsername && leftUsername === rightUsername)
+}
+
 function isUserBanned(user) {
   if (typeof user?.banned === 'boolean') return user.banned
   if (typeof user?.isBanned === 'boolean') return user.isBanned
-  if (typeof user?.status === 'string') return user.status.toLowerCase().includes('ban')
+  if (typeof user?.blocked === 'boolean') return user.blocked
+  if (typeof user?.isBlocked === 'boolean') return user.isBlocked
+  if (typeof user?.disabled === 'boolean') return user.disabled
+  if (typeof user?.isDisabled === 'boolean') return user.isDisabled
+  if (typeof user?.active === 'boolean') return !user.active
+  if (typeof user?.enabled === 'boolean') return !user.enabled
+  if (typeof user?.isActive === 'boolean') return !user.isActive
+
+  const status = normalizeValue(user?.status || user?.accountStatus || user?.state)
+  if (!status) return false
+
+  const bannedStatuses = ['ban', 'banned', 'blocked', 'block', 'inactive', 'disabled', 'disable', 'deactivated', 'locked', 'suspended']
+  const activeStatuses = ['active', 'enabled', 'verified', 'normal', 'ok']
+
+  if (bannedStatuses.some((value) => status.includes(value))) return true
+  if (activeStatuses.some((value) => status === value || status.includes(value))) return false
+
   return false
 }
 
@@ -34,6 +68,7 @@ export default function AdminAccounts() {
   const [editingUser, setEditingUser] = useState(null)
   const [editForm, setEditForm] = useState({ username: '', email: '', role: 'USER' })
   const [saving, setSaving] = useState(false)
+  const [currentUser, setCurrentUser] = useState(null)
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
@@ -68,6 +103,29 @@ export default function AdminAccounts() {
   useEffect(() => {
     loadUsers()
   }, [page, sort, debouncedSearch])
+
+  useEffect(() => {
+    let isMounted = true
+
+    async function loadCurrentUser() {
+      try {
+        const profile = await authApi.me()
+        if (isMounted) {
+          setCurrentUser(profile)
+        }
+      } catch {
+        if (isMounted) {
+          setCurrentUser(null)
+        }
+      }
+    }
+
+    loadCurrentUser()
+
+    return () => {
+      isMounted = false
+    }
+  }, [])
 
   function changeSort(field) {
     setPage(0)
@@ -112,6 +170,11 @@ export default function AdminAccounts() {
   }
 
   async function handleBan(user) {
+    if (isSameUser(user, currentUser)) {
+      toast.error('Khong the ban tai khoan dang dang nhap.')
+      return
+    }
+
     const reason = prompt('Ly do ban tai khoan (tuy chon):') || ''
 
     try {
@@ -126,6 +189,11 @@ export default function AdminAccounts() {
   }
 
   async function handleUnban(user) {
+    if (isSameUser(user, currentUser)) {
+      toast.error('Khong the mo ban tai khoan dang dang nhap.')
+      return
+    }
+
     try {
       await adminApi.unbanUser(getId(user))
       toast.success('Da mo ban tai khoan.')
@@ -196,6 +264,7 @@ export default function AdminAccounts() {
                 )}
                 {users.map((user) => {
                   const banned = isUserBanned(user)
+                  const isCurrentUser = isSameUser(user, currentUser)
                   return (
                     <tr key={getId(user)} className="border-b last:border-0">
                       <td className="px-3 py-3 font-medium text-slate-900">{user.username || user.name || 'No name'}</td>
@@ -212,14 +281,16 @@ export default function AdminAccounts() {
                             <Edit className="h-3 w-3" />
                             Edit
                           </button>
-                          {banned ? (
-                            <button onClick={() => handleUnban(user)} className="rounded-lg border px-3 py-1 text-xs text-slate-700 hover:bg-slate-50">
-                              Mo ban
-                            </button>
-                          ) : (
-                            <button onClick={() => handleBan(user)} className="rounded-lg border border-red-300 px-3 py-1 text-xs text-red-600 hover:bg-red-50">
-                              Ban
-                            </button>
+                          {!isCurrentUser && (
+                            banned ? (
+                              <button onClick={() => handleUnban(user)} className="rounded-lg border px-3 py-1 text-xs text-slate-700 hover:bg-slate-50">
+                                Mo ban
+                              </button>
+                            ) : (
+                              <button onClick={() => handleBan(user)} className="rounded-lg border border-red-300 px-3 py-1 text-xs text-red-600 hover:bg-red-50">
+                                Ban
+                              </button>
+                            )
                           )}
                         </div>
                       </td>

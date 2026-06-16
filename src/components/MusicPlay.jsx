@@ -25,7 +25,13 @@ function MusicPlay({ songs = [], currentSong: activeSong, onSongChange } = {}) {
   const currentSong = activeSong || queue[currentSongIndex] || songs[0]
 
   useEffect(() => {
-    setQueue(songs)
+    const timeoutId = window.setTimeout(() => {
+      setQueue(songs)
+    }, 0)
+
+    return () => {
+      window.clearTimeout(timeoutId)
+    }
   }, [songs])
 
   useEffect(() => {
@@ -33,9 +39,15 @@ function MusicPlay({ songs = [], currentSong: activeSong, onSongChange } = {}) {
       return
     }
 
-    const nextQueue = [activeSong, ...songs.filter((song) => song?.id !== activeSong?.id)]
-    setQueue(nextQueue)
-    setCurrentSongIndex(0)
+    const timeoutId = window.setTimeout(() => {
+      const nextQueue = [activeSong, ...songs.filter((song) => song?.id !== activeSong?.id)]
+      setQueue(nextQueue)
+      setCurrentSongIndex(0)
+    }, 0)
+
+    return () => {
+      window.clearTimeout(timeoutId)
+    }
   }, [activeSong, songs])
 
   useEffect(() => {
@@ -86,7 +98,7 @@ function MusicPlay({ songs = [], currentSong: activeSong, onSongChange } = {}) {
         audioRef.current.play()
       }
     }
-  }, [currentSong])
+  }, [currentSong, isPlaying])
 
   function togglePlay() {
     if (audioRef.current) {
@@ -251,19 +263,6 @@ function MusicPlay({ songs = [], currentSong: activeSong, onSongChange } = {}) {
 
       {/* Player Bar */}
       <div className="fixed bottom-2 left-6 right-2 md:bottom-3 md:left-[calc(16rem+3rem)] md:right-10 xl:left-[calc(16rem+3.5rem)] xl:right-14 bg-gradient-to-t from-red-800 to-red-700 text-white shadow-xl z-40 rounded-lg md:rounded-xl">
-        {/* Minimize Button */}
-        <div className="absolute top-2 right-2 md:top-3 md:right-3">
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={() => setIsMinimized(!isMinimized)}
-            className="h-6 w-6 p-0 md:h-7 md:w-7 md:p-0 text-white hover:bg-red-700"
-            title={isMinimized ? 'Expand' : 'Minimize'}
-          >
-            {isMinimized ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-          </Button>
-        </div>
-
         {/* Minimized View */}
         {isMinimized && (
           <div className="px-3 py-2 flex items-center justify-between gap-3">
@@ -280,6 +279,15 @@ function MusicPlay({ songs = [], currentSong: activeSong, onSongChange } = {}) {
               ) : (
                 <Play className="w-4 h-4 ml-0.5" />
               )}
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => setIsMinimized(false)}
+              className="h-7 w-7 shrink-0 p-0 text-white hover:bg-red-700"
+              title="Expand"
+            >
+              <ChevronUp className="w-4 h-4" />
             </Button>
           </div>
         )}
@@ -304,7 +312,7 @@ function MusicPlay({ songs = [], currentSong: activeSong, onSongChange } = {}) {
         </div>
 
         {/* Main Player Controls */}
-        <div className="px-2.5 py-2 md:px-3 md:py-2.5 flex items-center justify-between gap-1 md:gap-1.5">
+        <div className="px-2.5 py-2 md:px-3 md:py-2.5 flex items-center justify-between gap-2 md:gap-3">
           {/* Song Info */}
           <div className="flex-1 min-w-0 max-w-[28%] md:max-w-none">
             <p className="font-semibold truncate text-xs md:text-sm text-white">{currentSong.title}</p>
@@ -396,6 +404,16 @@ function MusicPlay({ songs = [], currentSong: activeSong, onSongChange } = {}) {
               title="Thêm vào playlist"
             >
               <ListMusic className="w-3 h-3 md:w-3.5 md:h-3.5" />
+            </Button>
+
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => setIsMinimized(true)}
+              className="h-6 w-6 p-0 md:h-7 md:w-7 md:p-0 text-white hover:bg-red-700"
+              title="Minimize"
+            >
+              <ChevronDown className="w-3 h-3 md:w-3.5 md:h-3.5" />
             </Button>
           </div>
         </div>

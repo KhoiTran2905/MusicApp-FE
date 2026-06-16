@@ -29,6 +29,38 @@ function normalizeSearchResults(data) {
   }
 }
 
+function normalizeSearchText(value) {
+  return String(value ?? '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/đ/g, 'd')
+    .replace(/Đ/g, 'D')
+    .toLowerCase()
+    .trim()
+}
+
+function itemMatchesQuery(item, query, fields) {
+  if (!query) return true
+
+  return fields.some((field) => {
+    const value = field.split('.').reduce((current, key) => current?.[key], item)
+    if (Array.isArray(value)) {
+      return value.some((entry) => normalizeSearchText(entry?.name || entry?.title || entry).includes(query))
+    }
+
+    return normalizeSearchText(value).includes(query)
+  })
+}
+
+function filterSearchResults(results, query) {
+  return {
+    songs: results.songs.filter((song) => itemMatchesQuery(song, query, ['title', 'name', 'songName', 'artist', 'artist.name', 'album', 'album.name', 'album.title'])),
+    artists: results.artists.filter((artist) => itemMatchesQuery(artist, query, ['name', 'fullName', 'bio', 'description'])),
+    albums: results.albums.filter((album) => itemMatchesQuery(album, query, ['name', 'title', 'description', 'artist', 'artist.name'])),
+    playlists: results.playlists.filter((playlist) => itemMatchesQuery(playlist, query, ['name', 'title', 'description'])),
+  }
+}
+
 function SongRow({ song, onPlay, isLiked, onLikeChange }) {
   const title = song.title || song.name || song.songName || 'Untitled song'
   const artistName = typeof song.artist === 'string' ? song.artist : song.artist?.name || 'Unknown artist'
@@ -62,6 +94,7 @@ export default function SearchPage() {
   const { setCurrentSong } = useMusic()
   const [searchParams] = useSearchParams()
   const query = searchParams.get('q')?.trim() || ''
+  const normalizedQuery = useMemo(() => normalizeSearchText(query), [query])
   const [results, setResults] = useState({ songs: [], artists: [], albums: [], playlists: [] })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -91,7 +124,7 @@ export default function SearchPage() {
     let isMounted = true
 
     async function loadResults() {
-      if (!query) {
+      if (!normalizedQuery) {
         setResults({ songs: [], artists: [], albums: [], playlists: [] })
         setLoading(false)
         setError('')
@@ -102,9 +135,9 @@ export default function SearchPage() {
       setError('')
 
       try {
-        const data = await searchApi.search(query)
+        const data = await searchApi.search(normalizedQuery)
         if (!isMounted) return
-        setResults(normalizeSearchResults(data))
+        setResults(filterSearchResults(normalizeSearchResults(data), normalizedQuery))
       } catch (err) {
         if (!isMounted) return
         setError(err.message || 'Không tìm thấy kết quả phù hợp.')
@@ -120,7 +153,7 @@ export default function SearchPage() {
     return () => {
       isMounted = false
     }
-  }, [query])
+  }, [normalizedQuery])
 
   const hasResults = useMemo(
     () => results.songs.length || results.artists.length || results.albums.length || results.playlists.length,
@@ -130,8 +163,8 @@ export default function SearchPage() {
   const sortedSongs = useMemo(() => {
     const items = [...results.songs]
     items.sort((left, right) => {
-      const leftTitle = (left.title || left.name || left.songName || '').toLowerCase()
-      const rightTitle = (right.title || right.name || right.songName || '').toLowerCase()
+      const leftTitle = normalizeSearchText(left.title || left.name || left.songName || '')
+      const rightTitle = normalizeSearchText(right.title || right.name || right.songName || '')
       const leftListenerCount = resolveSongListenerCount(left)
       const rightListenerCount = resolveSongListenerCount(right)
 
