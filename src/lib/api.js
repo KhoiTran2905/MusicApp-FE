@@ -1,4 +1,6 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || ''
+const API_BASE_URL = import.meta.env.VITE_BACKEND_URL || ''
+
+console.log('API Base URL:', API_BASE_URL)
 
 function buildUrl(path) {
 	if (!path) {
