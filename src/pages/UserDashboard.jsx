@@ -255,7 +255,6 @@ function UserDashboard() {
 					<div className="mb-4 flex items-center justify-between gap-3">
 						<div>
 							<h2 className="text-lg font-semibold text-slate-900 md:text-xl">Bài hát gợi ý hôm nay</h2>
-							<p className="text-sm text-slate-500">Chọn bài để phát ngay từ dashboard.</p>
 						</div>
 						<Play className="h-5 w-5 text-red-700" />
 					</div>
@@ -273,12 +272,37 @@ function UserDashboard() {
 									type="button"
 									key={resolveSongId(song) || resolveSongTitle(song)}
 									onClick={() => setCurrentSong(song)}
-									className="flex w-full-center gap-2 sm:gap-3 rounded-xl md:rounded-2xl px-3 py-2.5"
+									className="
+									group
+									flex
+									w-full
+									items-center
+									gap-3
+									rounded-2xl
+									bg-white
+									p-3
+									text-left
+									transition-all
+									duration-200
+									hover:bg-red-50
+									hover:shadow-sm"
 								>
-									<div className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-xl bg-red-600 text-white shadow-sm">
+									<div
+										className="
+										flex
+										h-12
+										w-12
+										shrink-0
+										items-center
+										justify-center
+										rounded-2xl
+										bg-red-600
+										text-white
+										shadow"
+									>
 										<Music2 className="h-4 w-4" />
 									</div>
-									<div className="min-w-0 flex-1">
+									<div className="min-w-0 flex-1 overflow-hidden">
 										<p className="truncate font-medium text-slate-900">{resolveSongTitle(song)}</p>
 										<p className="truncate text-sm text-slate-500">{resolveSongArtistName(song)}</p>
 									</div>
@@ -298,7 +322,6 @@ function UserDashboard() {
 				<section className="rounded-3xl border bg-white p-5 shadow-sm md:p-6">
 					<div className="mb-4">
 						<h2 className="text-lg font-semibold text-slate-900 md:text-xl">Bắt đầu nhanh</h2>
-						<p className="text-sm text-slate-500">Các tác vụ thực tế thường dùng trong app.</p>
 					</div>
 
 					<div className="space-y-3">
